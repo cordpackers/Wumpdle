@@ -19,6 +19,10 @@ if (!fs.existsSync(windowsCacheFile)) {
   fs.closeSync(fs.openSync(windowsCacheFile, "w"));
 }
 
+if (!fs.existsSync(moduleVersionFile)) {
+  fs.closeSync(fs.openSync(moduleVersionFile, "w"));
+}
+
 const patched_versions = JSON.parse(
   fs.readFileSync(path.join(distributionFolder, "patched_versions.json"), {
     encoding: "utf-8",
@@ -56,7 +60,7 @@ app.get(
     } else {
       updateInfo = JSON.parse(cache);
     }
-    if (moduleVersions == "") {
+    if (moduleVersions === "") {
       moduleVersions = {};
       for (const module of Object.keys(updateInfo.modules)) {
         if (!Object.keys(patched_versions.modules).includes(module)) {
