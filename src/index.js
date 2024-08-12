@@ -190,6 +190,7 @@ app.get(
   }
 );
 
+// also get api/downloads/distributions/app/installers/latest?channel=stable&platform=win&arch=x64 as well
 app.get("/api/download", async function (req, reply) {
   let pathToDownload;
   if (req.query.platform === "win") {
