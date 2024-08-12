@@ -1,0 +1,20 @@
+{
+  "name": "wumpdle",
+  "version": "1.0.0",
+  "description": "",
+  "exports": "./src/index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=14.16"
+  },
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "author": "",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "@fastify/compress": "^7.0.3",
+    "@fastify/static": "^7.0.4",
+    "fastify": "^4.28.1"
+  }
+}
