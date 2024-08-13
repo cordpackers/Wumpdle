@@ -11,7 +11,7 @@
     "start": "node src/index.js"
   },
   "author": "",
-  "license": "GPL-3.0-or-later",
+  "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@fastify/compress": "^7.0.3",
     "@fastify/static": "^7.0.4",
