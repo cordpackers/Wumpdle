@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import path from "path";
 import * as fs from "fs";
-import fastifyStatic from "@fastify/static"
+import fastifyStatic from "@fastify/static";
 
 const app = Fastify();
 
@@ -48,8 +48,8 @@ const setupNames = JSON.parse(
 
 app.register(fastifyStatic, {
   root: path.join(distributionFolder),
-  serve: false
-})
+  serve: false,
+});
 
 app.get(
   "/api/updates/windows/distributions/app/manifests/latest",
@@ -202,7 +202,9 @@ app.get(
     if (req.params.file.includes(".distro")) {
       reply.header("content-type", "application/octet-stream");
     }
-    reply.download(`patched/${req.params.hostOrModule}/${req.params.version}/${req.params.file}`);
+    reply.download(
+      `patched/${req.params.hostOrModule}/${req.params.version}/${req.params.file}`
+    );
   }
 );
 
