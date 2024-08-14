@@ -194,46 +194,57 @@ app.get("/api/modules/stable/versions.json", async (req, reply) => {
 // content type is application/vnd.debian.binary-package and application/x-tar replypectively
 
 // tar.br files need to be application/octet-stream
-app.get(
-  "/download/patched/:hostOrModule/:version/:file",
-  function (req, reply) {
-    reply.header(
-      "content-length",
-      fs.statSync(
-        path.join(
-          distributionFolder,
-          "patched",
-          req.params.hostOrModule,
-          req.params.version,
-          req.params.file
-        )
-      ).size
-    );
-    if (req.params.file.includes(".distro")) {
-      reply.header("content-type", "application/octet-stream");
+if (!isUsingObjectStorage) {
+  app.get(
+    "/download/patched/:hostOrModule/:version/:file",
+    function (req, reply) {
+      reply.header(
+        "content-length",
+        fs.statSync(
+          path.join(
+            distributionFolder,
+            "patched",
+            req.params.hostOrModule,
+            req.params.version,
+            req.params.file
+          )
+        ).size
+      );
+      if (req.params.file.includes(".distro")) {
+        reply.header("content-type", "application/octet-stream");
+      }
+      reply.download(
+        `patched/${req.params.hostOrModule}/${req.params.version}/${req.params.file}`
+      );
     }
-    reply.download(
-      `patched/${req.params.hostOrModule}/${req.params.version}/${req.params.file}`
-    );
-  }
-);
+  );
+}
 
 // also get api/downloads/distributions/app/installers/latest?channel=stable&platform=win&arch=x64 as well
 app.get("/api/download", function (req, reply) {
   let pathToDownload;
-  if (req.query.platform === "win") {
-    reply.header(
-      "content-type",
-      "application/vnd.microsoft.portable-executable"
-    );
-    pathToDownload = setupNames.windows;
-    reply.header(
-      "Content-Disposition",
-      `attachment; filename=${setupNames.windows}`
-    );
+  switch (req.query.platform) {
+    case "win": {
+      pathToDownload = setupNames.windows;
+      if (!isUsingObjectStorage) {
+        reply.header(
+          "content-type",
+          "application/vnd.microsoft.portable-executable"
+        );
+        reply.header(
+          "Content-Disposition",
+          `attachment; filename=${setupNames.windows}`
+        );
+      }
+      break;
+    }
   }
-  reply.header("content-length", fs.statSync(pathToDownload).size);
-  reply.download(`download/${req.query.platform}/${pathToDownload}`);
+  if (!isUsingObjectStorage) {
+    reply.header("content-length", fs.statSync(pathToDownload).size);
+    reply.download(`download/${req.query.platform}/${pathToDownload}`);
+  } else {
+    reply.redirect(pathToDownload);
+  }
 });
 
 app.listen({ port: port }, (err, addreplys) => {

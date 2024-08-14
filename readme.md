@@ -36,7 +36,7 @@ It get stable only for now, new updates would be pushed later.
 4. Write your setup name in `setup_names.json`. Here's an example:
 ```json
 {
-  "windows": "HowdycordSetup.exe"
+  "windows": "HowdycordSetup.exe" // if you use object storage type out the full url, otherwise set filename
 }
 ```
 5. Put installer files to `download/(os)/`
