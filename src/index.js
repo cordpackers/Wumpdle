@@ -59,7 +59,6 @@ app.get(
     let moduleVersions = fs.readFileSync(moduleVersionFile, {
       encoding: "utf-8",
     });
-    req.log.info(updateInfo);
     if (
       Math.abs(new Date() - fs.statSync(windowsCacheFile).mtime) >= 14400000 ||
       updateInfo === ""
