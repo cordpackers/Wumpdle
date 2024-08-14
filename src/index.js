@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import path from "path";
 import * as fs from "fs";
+import fastifyStatic from "@fastify/static"
 
 const app = Fastify();
 
@@ -44,6 +45,19 @@ const setupNames = JSON.parse(
 );
 
 // await app.register(import("@fastify/compress"), { global: false });
+
+app.register(fastifyStatic, {
+  root: path.join(distributionFolder, 'download'),
+  prefix: '/api/download',
+  serve: false
+})
+
+app.register(fastifyStatic, {
+  root: path.join(distributionFolder, 'patched'),
+  prefix: '/download/patched',
+  decorateReply: false
+})
+
 
 app.get(
   "/api/updates/windows/distributions/app/manifests/latest",
@@ -178,7 +192,7 @@ app.get("/api/modules/stable/versions.json", async (req, reply) => {
 // content type is application/vnd.debian.binary-package and application/x-tar replypectively
 
 // tar.br files need to be application/octet-stream
-app.get(
+/* app.get(
   "/download/patched/:hostOrModule/:version/:file",
   async function (req, reply) {
     reply.header(
@@ -209,7 +223,7 @@ app.get(
     );
     return reply.send(stream);
   }
-);
+);*/
 
 // also get api/downloads/distributions/app/installers/latest?channel=stable&platform=win&arch=x64 as well
 app.get("/api/download", async function (req, reply) {
