@@ -54,10 +54,12 @@ const setupNames = JSON.parse(
 
 // await app.register(import("@fastify/compress"), { global: false });
 
-app.register(fastifyStatic, {
-  root: path.join(distributionFolder),
-  serve: false,
-});
+if (!isUsingObjectStorage) {
+  app.register(fastifyStatic, {
+    root: path.join(distributionFolder),
+    serve: false,
+  });
+}
 
 app.get(
   "/api/updates/windows/distributions/app/manifests/latest",
