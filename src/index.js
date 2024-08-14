@@ -4,13 +4,19 @@ import * as fs from "fs";
 import fastifyStatic from "@fastify/static";
 
 const app = Fastify({
-  logger: true
+  logger: true,
 });
 
 let port = 3000;
 
+let isUsingObjectStorage = false;
+
 if (process.argv[2] && parseInt(process.argv[2])) {
   port = parseInt(process.argv[2]);
+}
+
+if (process.argv[3] && process.argv[3] === true) {
+  isUsingObjectStorage = true;
 }
 
 const distributionFolder = path.join(import.meta.dirname, "..", "distribution");
@@ -108,11 +114,13 @@ app.get(
     }
     updateInfo.full.host_version = patched_versions.host.version;
     updateInfo.full.package_sha256 = patched_versions.host.sha256;
-    updateInfo.full.url = `${req.protocol}://${
-      req.hostname
-    }/download/patched/host/${patched_versions.host.version.join(".")}/${
-      patched_versions.host.files.windows.full
-    }`;
+    updateInfo.full.url = isUsingObjectStorage
+      ? patched_versions.host.files.windows.full
+      : `${req.protocol}://${
+          req.hostname
+        }/download/patched/host/${patched_versions.host.version.join(".")}/${
+          patched_versions.host.files.windows.full
+        }`;
     // updateInfo.deltas.map((x) => {x.host_version = [2024, 8, 1]; return x})
     updateInfo.deltas = [];
     for (const module of Object.keys(updateInfo.modules)) {
@@ -121,9 +129,9 @@ app.get(
           patched_versions.modules[module].version;
         updateInfo.modules[module].full.package_sha256 =
           patched_versions.modules[module].sha256;
-        updateInfo.modules[
-          module
-        ].full.url = `${req.protocol}://${req.hostname}/download/patched/${module}/${patched_versions.modules[module].version}/${patched_versions.modules[module].files.windows.full}`;
+        updateInfo.modules[module].full.url = isUsingObjectStorage
+          ? patched_versions.modules[module].files.windows.full
+          : `${req.protocol}://${req.hostname}/download/patched/${module}/${patched_versions.modules[module].version}/${patched_versions.modules[module].files.windows.full}`;
       } else {
         updateInfo.modules[module].full.module_version = moduleVersions[module];
       }

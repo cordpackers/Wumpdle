@@ -16,7 +16,7 @@ It get stable only for now, new updates would be pushed later.
     "sha256": "",
     "files": {
       "windows": {
-        "full": "full.distro"
+        "full": "full.distro" // if you use object storage type out the full url, otherwise set filename
       }
     }
   },
@@ -26,7 +26,7 @@ It get stable only for now, new updates would be pushed later.
       "sha256": "",
       "files": {
         "windows": {
-          "full": "full.distro"
+          "full": "full.distro" // if you use object storage type out the full url, otherwise set filename
         }
       }
     }
@@ -40,4 +40,4 @@ It get stable only for now, new updates would be pushed later.
 }
 ```
 5. Put installer files to `download/(os)/`
-6. Run `npm run start (port here)`
+6. Run `npm run start (port here) (using object storage? boolean here)`
