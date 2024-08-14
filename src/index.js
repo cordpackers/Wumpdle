@@ -226,27 +226,21 @@ app.get("/api/modules/stable/versions.json", async (req, reply) => {
 );*/
 
 // also get api/downloads/distributions/app/installers/latest?channel=stable&platform=win&arch=x64 as well
-app.get("/api/download", async function (req, reply) {
+app.get("/api/download", function (req, reply) {
   let pathToDownload;
   if (req.query.platform === "win") {
     reply.header(
       "content-type",
       "application/vnd.microsoft.portable-executable"
     );
-    pathToDownload = path.join(
-      distributionFolder,
-      "download",
-      "win",
-      setupNames.windows
-    );
+    pathToDownload = setupNames.windows;
     reply.header(
       "Content-Disposition",
       `attachment; filename=${setupNames.windows}`
     );
   }
   reply.header("content-length", fs.statSync(pathToDownload).size);
-  const stream = fs.createReadStream(pathToDownload);
-  return reply.send(stream);
+  reply.download(pathToDownload);
 });
 
 app.listen({ port: port }, (err, addreplys) => {
