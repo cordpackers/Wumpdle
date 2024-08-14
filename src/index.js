@@ -3,7 +3,9 @@ import path from "path";
 import * as fs from "fs";
 import fastifyStatic from "@fastify/static";
 
-const app = Fastify();
+const app = Fastify({
+  logger: true
+});
 
 let port = 3000;
 
