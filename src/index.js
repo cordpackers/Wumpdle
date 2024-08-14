@@ -7,13 +7,14 @@ const app = Fastify();
 let port = 3000;
 
 if (process.argv[2] && parseInt(process.argv[2])) {
-  port = parseInt(process.argv[2])
+  port = parseInt(process.argv[2]);
 }
 
 const distributionFolder = path.join(import.meta.dirname, "..", "distribution");
 const cacheFolder = path.join(distributionFolder, "cache");
 const windowsCacheFile = path.join(cacheFolder, "windows.json");
 const moduleVersionFile = path.join(cacheFolder, "module_versions.json");
+const hostVersionFile = path.join(cacheFolder, "host_version.json");
 
 if (!fs.existsSync(windowsCacheFile)) {
   fs.closeSync(fs.openSync(windowsCacheFile, "w"));
@@ -21,6 +22,13 @@ if (!fs.existsSync(windowsCacheFile)) {
 
 if (!fs.existsSync(moduleVersionFile)) {
   fs.closeSync(fs.openSync(moduleVersionFile, "w"));
+}
+
+if (!fs.existsSync(hostVersionFile)) {
+  fs.writeFileSync(
+    hostVersionFile,
+    JSON.stringify({ windows: null, macOS: null, linux: null })
+  );
 }
 
 const patched_versions = JSON.parse(
@@ -40,16 +48,21 @@ const setupNames = JSON.parse(
 app.get(
   "/api/updates/windows/distributions/app/manifests/latest",
   async (req, reply) => {
-    const cache = fs.readFileSync(windowsCacheFile, {
+    let updateInfo = fs.readFileSync(windowsCacheFile, {
       encoding: "utf-8",
     });
+    const hostVersion = JSON.parse(
+      fs.readFileSync(hostVersionFile, {
+        encoding: "utf-8",
+      })
+    );
     let moduleVersions = fs.readFileSync(moduleVersionFile, {
       encoding: "utf-8",
     });
-    let updateInfo;
+    req.log.info(updateInfo);
     if (
       Math.abs(new Date() - fs.statSync(windowsCacheFile).mtime) >= 14400000 ||
-      cache === ""
+      updateInfo === ""
     ) {
       updateInfo = await (
         await fetch(
@@ -57,8 +70,12 @@ app.get(
         )
       ).json();
       fs.writeFileSync(windowsCacheFile, JSON.stringify(updateInfo));
+      if (hostVersion.windows === null) {
+        hostVersion.windows = updateInfo.full.host_version;
+        fs.writeFileSync(hostVersionFile, JSON.stringify(hostVersion));
+      }
     } else {
-      updateInfo = JSON.parse(cache);
+      updateInfo = JSON.parse(updateInfo);
     }
     if (moduleVersions === "") {
       moduleVersions = {};
@@ -73,10 +90,11 @@ app.get(
       moduleVersions = JSON.parse(moduleVersions);
     }
     if (
-      cache !== "" &&
-      JSON.parse(cache).full.host_version.toString() !==
-        updateInfo.full.host_version.toString()
+      hostVersion.windows !== null &&
+      hostVersion.windows.toString() !== updateInfo.full.host_version.toString()
     ) {
+      hostVersion.windows = updateInfo.full.host_version;
+      fs.writeFileSync(hostVersionFile, JSON.stringify(hostVersion));
       for (const module of Object.keys(moduleVersions)) {
         moduleVersions[module] = moduleVersions[module] + 1;
       }
