@@ -13,8 +13,7 @@
   "author": "",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
-    "@fastify/compress": "^7.0.3",
-    "@fastify/static": "^7.0.4",
-    "fastify": "^4.28.1"
+    "content-disposition": "^0.5.4",
+    "express": "^4.19.2"
   }
 }

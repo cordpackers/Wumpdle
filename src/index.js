@@ -1,11 +1,9 @@
-import Fastify from "fastify";
+import express from "express";
 import path from "path";
 import * as fs from "fs";
-import fastifyStatic from "@fastify/static";
+import contentDisposition from "content-disposition";
 
-const app = Fastify({
-  logger: true,
-});
+const app = express();
 
 let port = 3000;
 
@@ -52,18 +50,51 @@ const setupNames = JSON.parse(
   })
 );
 
-// await app.register(import("@fastify/compress"), { global: false });
+function setDownloadHeaders(res, path) {
+  switch (true) {
+    case path.includes("win"): {
+      res.header(
+        "content-type",
+        "application/vnd.microsoft.portable-executable"
+      );
+      res.header(
+        "Content-Disposition",
+        `attachment; filename=${setupNames.windows}`
+      );
+      break;
+    }
+  }
+}
+
+// tar.br files need to be application/octet-stream
+function setPatchedHeaders(res, path) {
+  res.setHeader("content-length", fs.statSync(path).size);
+  if (path.includes(".distro")) {
+    res.setHeader("content-type", "application/octet-stream");
+  }
+  res.setHeader("Content-Disposition", contentDisposition(path));
+}
 
 if (!isUsingObjectStorage) {
-  app.register(fastifyStatic, {
-    root: path.join(distributionFolder),
-    serve: false,
-  });
+  app.use(
+    "/download/setup",
+    express.static(path.join(distributionFolder, "download"), {
+      index: false,
+      setHeaders: setDownloadHeaders,
+    })
+  );
+  app.use(
+    "/download/patched",
+    express.static(path.join(distributionFolder, "patched"), {
+      index: false,
+      setHeaders: setPatchedHeaders,
+    })
+  );
 }
 
 app.get(
   "/api/updates/windows/distributions/app/manifests/latest",
-  async (req, reply) => {
+  async (req, res) => {
     let updateInfo = fs.readFileSync(windowsCacheFile, {
       encoding: "utf-8",
     });
@@ -118,9 +149,9 @@ app.get(
     updateInfo.full.package_sha256 = patched_versions.host.sha256;
     updateInfo.full.url = isUsingObjectStorage
       ? patched_versions.host.files.windows.full
-      : `${req.protocol}://${
-          req.hostname
-        }/download/patched/host/${patched_versions.host.version.join(".")}/${
+      : `${req.protocol}://${req.header(
+          "Host"
+        )}/download/patched/host/${patched_versions.host.version.join(".")}/${
           patched_versions.host.files.windows.full
         }`;
     // updateInfo.deltas.map((x) => {x.host_version = [2024, 8, 1]; return x})
@@ -133,7 +164,9 @@ app.get(
           patched_versions.modules[module].sha256;
         updateInfo.modules[module].full.url = isUsingObjectStorage
           ? patched_versions.modules[module].files.windows.full
-          : `${req.protocol}://${req.hostname}/download/patched/${module}/${patched_versions.modules[module].version}/${patched_versions.modules[module].files.windows.full}`;
+          : `${req.protocol}://${req.get("Host")}/download/patched/${module}/${
+              patched_versions.modules[module].version
+            }/${patched_versions.modules[module].files.windows.full}`;
       } else {
         updateInfo.modules[module].full.module_version = moduleVersions[module];
       }
@@ -141,11 +174,11 @@ app.get(
         patched_versions.host.version;
       updateInfo.modules[module].deltas = [];
     }
-    return reply.send(JSON.stringify(updateInfo));
+    return res.json(updateInfo);
   }
 );
 
-app.get("/api/updates/stable", async (req, reply) => {
+app.get("/api/updates/stable", async (req, res) => {
   // query = osx
 
   /* {
@@ -169,7 +202,7 @@ app.get("/api/updates/stable", async (req, reply) => {
 
 // /api/modules/stable/versions.json?host_version=(host_version)
 // query can be osx or linux
-app.get("/api/modules/stable/versions.json", async (req, reply) => {
+app.get("/api/modules/stable/versions.json", async (req, res) => {
   /*
   {
     discord_cloudsync: 1,
@@ -195,61 +228,24 @@ app.get("/api/modules/stable/versions.json", async (req, reply) => {
 // /api/download/stable?platform=linux&format=tar.gz or /api/download/stable?platform=linux&format=deb returns host download in .tar or .deb, same file as linux download on discord website
 // content type is application/vnd.debian.binary-package and application/x-tar replypectively
 
-// tar.br files need to be application/octet-stream
-if (!isUsingObjectStorage) {
-  app.get(
-    "/download/patched/:hostOrModule/:version/:file",
-    function (req, reply) {
-      reply.header(
-        "content-length",
-        fs.statSync(
-          path.join(
-            distributionFolder,
-            "patched",
-            req.params.hostOrModule,
-            req.params.version,
-            req.params.file
-          )
-        ).size
-      );
-      if (req.params.file.includes(".distro")) {
-        reply.header("content-type", "application/octet-stream");
-      }
-      reply.download(
-        `patched/${req.params.hostOrModule}/${req.params.version}/${req.params.file}`
-      );
-    }
-  );
-}
-
 // also get api/downloads/distributions/app/installers/latest?channel=stable&platform=win&arch=x64 as well
-app.get("/api/download", function (req, reply) {
+app.get("/api/download", function (req, res) {
   let pathToDownload;
   switch (req.query.platform) {
     case "win": {
       pathToDownload = setupNames.windows;
-      if (!isUsingObjectStorage) {
-        reply.header(
-          "content-type",
-          "application/vnd.microsoft.portable-executable"
-        );
-        reply.header(
-          "Content-Disposition",
-          `attachment; filename=${setupNames.windows}`
-        );
-      }
       break;
     }
   }
   if (!isUsingObjectStorage) {
-    reply.header("content-length", fs.statSync(pathToDownload).size);
-    reply.download(`download/${req.query.platform}/${pathToDownload}`);
+    res.redirect(
+      `../../download/setup/${req.query.platform}/${pathToDownload}`
+    );
   } else {
-    reply.redirect(pathToDownload);
+    res.redirect(pathToDownload);
   }
 });
 
-app.listen({ port: port }, (err, addreplys) => {
-  if (err) throw err;
-  console.log(`Wumpdle listening on ${addreplys}`);
+app.listen(port, () => {
+  console.log(`Wumpdle listening on ${port}`);
 });
