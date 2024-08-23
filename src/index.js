@@ -58,7 +58,7 @@ function setDownloadHeaders(res, path) {
         "application/vnd.microsoft.portable-executable"
       );
       res.header(
-        "Content-Disposition",
+        "content-disposition",
         `attachment; filename=${setupNames.windows}`
       );
       break;
@@ -67,12 +67,12 @@ function setDownloadHeaders(res, path) {
 }
 
 // tar.br files need to be application/octet-stream
-function setPatchedHeaders(res, path) {
-  res.setHeader("content-length", fs.statSync(path).size);
+function setPatchedHeaders(res, path, stat) {
+  res.header("X-Content-Length", stat.size);
   if (path.includes(".distro")) {
-    res.setHeader("content-type", "application/octet-stream");
+    res.header("content-type", "application/octet-stream");
   }
-  res.setHeader("Content-Disposition", contentDisposition(path));
+  res.header("content-disposition", contentDisposition(path));
 }
 
 if (!isUsingObjectStorage) {
